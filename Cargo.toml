@@ -1,0 +1,10 @@
+[package]
+name = "rarc"
+version = "0.1.0"
+authors = ["Erin Moon <erin@hashbang.sh>"]
+
+[dependencies]
+nom = "3.2"
+pretty_assertions = "0.3.0"
+byteorder = "1.1.0"
+encoding = "0.2"
