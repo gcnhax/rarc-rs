@@ -2,6 +2,7 @@
 name = "rarc"
 version = "0.1.0"
 authors = ["Erin Moon <erin@hashbang.sh>"]
+exclude = ["data/*"]
 
 [dependencies]
 nom = "3.2"
