@@ -67,9 +67,7 @@ pub struct Fs {
 
 impl Fs {
     pub fn new(root: Dir) -> Fs {
-        Fs {
-            root: root,
-        }
+        Fs { root: root }
     }
 }
 
@@ -85,7 +83,7 @@ pub fn dump_tree(dir: &Dir) {
                 Node::File(ref f) => println!("{}{}", " ".repeat((level + 1) * INDENT), f.name()),
                 Node::Dir(ref d) => {
                     dump_tree(d, level + 1);
-                },
+                }
             }
         }
     }

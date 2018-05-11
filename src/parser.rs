@@ -1,9 +1,10 @@
 use nom::{IResult, be_u16, be_u32};
 
-use {Header, Node, Entry};
+use {Entry, Header, Node};
 
 pub fn parse_header(input: &[u8]) -> IResult<&[u8], Header> {
-    do_parse!(input,
+    do_parse!(
+        input,
         tag!("RARC") >>
         file_size: be_u32 >>
         tag!([0x00, 0x00, 0x00, 0x20]) >> // header length (always 0x20, this is just a validity assert)
@@ -12,21 +13,9 @@ pub fn parse_header(input: &[u8]) -> IResult<&[u8], Header> {
         take!(4) >> // data_length again?
         take!(8) >> // u32 unknown[2] = {0, 0};
 
-        n_nodes: be_u32 >>
-        nodes_offset: be_u32 >>
-
-        n_entries: be_u32 >>
-        entries_offset: be_u32 >>
-
-        strings_size: be_u32 >>
-        strings_offset: be_u32 >>
-
-        n_files: be_u16 >>
-
-        take!(2) >>
-        take!(4) >>
-
-        (Header {
+        n_nodes: be_u32 >> nodes_offset: be_u32 >> n_entries: be_u32
+            >> entries_offset: be_u32 >> strings_size: be_u32 >> strings_offset: be_u32
+            >> n_files: be_u16 >> take!(2) >> take!(4) >> (Header {
             file_size: file_size,
             data_offset: data_offset + 0x20,
             data_length: data_length,
@@ -46,14 +35,10 @@ pub fn parse_header(input: &[u8]) -> IResult<&[u8], Header> {
 }
 
 pub fn parse_node(input: &[u8]) -> IResult<&[u8], Node> {
-    do_parse!(input,
-        id: take_str!(4) >>
-        filename_offset: be_u32 >>
-        filename_hash: be_u16 >>
-        n_entries: be_u16 >>
-        entry_start_id: be_u32 >>
-
-        (Node {
+    do_parse!(
+        input,
+        id: take_str!(4) >> filename_offset: be_u32 >> filename_hash: be_u16 >> n_entries: be_u16
+            >> entry_start_id: be_u32 >> (Node {
             id: String::from(id),
             name: None,
             filename_offset: filename_offset,
@@ -65,7 +50,8 @@ pub fn parse_node(input: &[u8]) -> IResult<&[u8], Node> {
 }
 
 pub fn parse_entry(input: &[u8]) -> IResult<&[u8], Entry> {
-    do_parse!(input,
+    do_parse!(
+        input,
         idx: be_u16 >>
         hash: be_u16 >>
         entry_type: be_u16 >>
@@ -150,22 +136,25 @@ mod test {
         let parse_result = parse_header(HANDCRAFTED_RARC_HEADER);
 
         assert!(parse_result.is_done());
-        assert_eq!(parse_result.unwrap().1, Header {
-            file_size: 0x13371337,
-            data_offset: 0x55555555,
-            data_length: 0x6776,
+        assert_eq!(
+            parse_result.unwrap().1,
+            Header {
+                file_size: 0x13371337,
+                data_offset: 0x55555555,
+                data_length: 0x6776,
 
-            n_nodes: 0x70,
-            nodes_offset: 0x33333333,
+                n_nodes: 0x70,
+                nodes_offset: 0x33333333,
 
-            n_entries: 0xff,
-            entries_offset: 0x53353376,
+                n_entries: 0xff,
+                entries_offset: 0x53353376,
 
-            strings_size: 0xffff,
-            strings_offset: 0x32547382,
+                strings_size: 0xffff,
+                strings_offset: 0x32547382,
 
-            n_files: 0x1532,
-        });
+                n_files: 0x1532,
+            }
+        );
     }
 
     /// Check that a handcrafted header inverts back to the input when `.write()`ing it

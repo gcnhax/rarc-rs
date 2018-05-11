@@ -1,30 +1,34 @@
 //! A crate for manipulating files in the Nintendo RARC archive format.
 
-#[macro_use]
-extern crate nom;
 extern crate byteorder;
 extern crate encoding;
+#[macro_use]
+extern crate nom;
 
 #[cfg(test)]
-#[macro_use] extern crate pretty_assertions;
+#[macro_use]
+extern crate pretty_assertions;
 
 mod error;
 mod parse_read;
 mod parser;
 pub mod vfs;
 
-use std::io::{Read, BufRead, Write, Seek, SeekFrom, Cursor};
+use std::io::{BufRead, Cursor, Read, Seek, SeekFrom, Write};
 use std::io;
 use std::ops::Range;
 use byteorder::{WriteBytesExt, BE};
-use encoding::{Encoding, DecoderTrap};
+use encoding::{DecoderTrap, Encoding};
 use encoding::all::WINDOWS_31J; // shift_jis
 
 pub use error::Error;
 
 /// A Nintendo RARC archive.
 #[derive(Debug)]
-pub struct Rarc<R> where R: Read + Seek {
+pub struct Rarc<R>
+where
+    R: Read + Seek,
+{
     header: Header,
     nodes: Vec<Node>,
     entries: Vec<Entry>,
@@ -35,7 +39,10 @@ pub struct Rarc<R> where R: Read + Seek {
     pub fs: vfs::Fs,
 }
 
-impl<R> Rarc<R> where R: Read + BufRead + Seek {
+impl<R> Rarc<R>
+where
+    R: Read + BufRead + Seek,
+{
     /// Reads an archive from a reader, parsing metadata and constructing a virtual filesystem.
     pub fn new(mut rdr: R) -> Result<Rarc<R>, Error> {
         let header = Header::read(&mut rdr)?;
@@ -47,7 +54,9 @@ impl<R> Rarc<R> where R: Read + BufRead + Seek {
         // read the string table
         let mut string_table = Vec::with_capacity(header.strings_size as usize);
         rdr.seek(SeekFrom::Start(header.strings_offset as u64))?;
-        (&mut rdr).take(header.strings_size as u64).read_to_end(&mut string_table)?;
+        (&mut rdr)
+            .take(header.strings_size as u64)
+            .read_to_end(&mut string_table)?;
 
         // seek to the start of the node table
         rdr.seek(SeekFrom::Start(header.nodes_offset as u64))?;
@@ -79,11 +88,17 @@ impl<R> Rarc<R> where R: Read + BufRead + Seek {
             for entry in &entries[node.entry_range()] {
                 if entry.filename_offset() != 0 && entry.filename_offset() != 2 {
                     let fsnode = match *entry {
-                        Entry::File {data_offset, data_length, ..} => {
+                        Entry::File {
+                            data_offset,
+                            data_length,
+                            ..
+                        } => {
                             let bounds = (data_offset as usize, data_length as usize);
                             vfs::Node::File(vfs::File::new(entry.name().unwrap(), bounds))
-                        },
-                        Entry::Folder {folder_node_idx, ..} => {
+                        }
+                        Entry::Folder {
+                            folder_node_idx, ..
+                        } => {
                             let mut subdir = vfs::Dir::new(entry.name().unwrap());
                             let node = &nodes[folder_node_idx as usize];
                             node_to_dir(nodes, entries, node, &mut subdir);
@@ -132,12 +147,18 @@ pub struct Header {
 
 impl Header {
     /// Parses a `Header` from a reader.
-    pub fn read<R>(rdr: R) -> Result<Header, Error> where R: Read + Seek {
+    pub fn read<R>(rdr: R) -> Result<Header, Error>
+    where
+        R: Read + Seek,
+    {
         parse_read::read(parser::parse_header, rdr)
     }
 
     /// Writes this header to a writer.
-    pub fn write<W>(&self, mut wtr: W) -> Result<(), io::Error> where W: Write {
+    pub fn write<W>(&self, mut wtr: W) -> Result<(), io::Error>
+    where
+        W: Write,
+    {
         wtr.write_all(b"RARC")?;
         wtr.write_u32::<BE>(self.file_size)?;
         wtr.write_u32::<BE>(0x20)?;
@@ -180,7 +201,10 @@ pub struct Node {
 
 impl Node {
     /// Parses a `Node` from a reader.
-    pub fn read<R>(rdr: R) -> Result<Node, Error> where R: Read + Seek {
+    pub fn read<R>(rdr: R) -> Result<Node, Error>
+    where
+        R: Read + Seek,
+    {
         parse_read::read(parser::parse_node, rdr)
     }
 
@@ -193,7 +217,8 @@ impl Node {
         rdr.read_until(0x00, &mut str_buf)?; // null-terminated
         str_buf.pop(); // remove the null terminator before decoding as shift_jis
 
-        self.name = Some(WINDOWS_31J.decode(&str_buf, DecoderTrap::Strict)
+        self.name = Some(WINDOWS_31J
+            .decode(&str_buf, DecoderTrap::Strict)
             .map_err(|e| Error::NameEncodingError(e.into_owned()))?);
 
         Ok(())
@@ -213,7 +238,10 @@ impl Node {
     }
 
     /// Writes this node to a writer.
-    pub fn write<W>(&self, mut wtr: W) -> Result<(), io::Error> where W: Write {
+    pub fn write<W>(&self, mut wtr: W) -> Result<(), io::Error>
+    where
+        W: Write,
+    {
         wtr.write_all(&self.id.as_bytes()[0..4])?; // truncate to make sure we don't botch alignment
         wtr.write_u32::<BE>(self.filename_offset)?;
         wtr.write_u16::<BE>(self.filename_hash)?;
@@ -250,7 +278,10 @@ pub enum Entry {
 
 impl Entry {
     /// Parses an entry from a reader.
-    pub fn read<R>(rdr: R) -> Result<Entry, Error> where R: Read + Seek {
+    pub fn read<R>(rdr: R) -> Result<Entry, Error>
+    where
+        R: Read + Seek,
+    {
         parse_read::read(parser::parse_entry, rdr)
     }
 
@@ -263,12 +294,13 @@ impl Entry {
         rdr.read_until(0x00, &mut str_buf)?; // null-terminated
         str_buf.pop(); // remove the null terminator before decoding as shift_jis
 
-        let name_ = WINDOWS_31J.decode(&str_buf, DecoderTrap::Strict)
+        let name_ = WINDOWS_31J
+            .decode(&str_buf, DecoderTrap::Strict)
             .map_err(|e| Error::NameEncodingError(e.into_owned()))?;
 
         match *self {
-            Entry::File {ref mut name, ..} => *name = Some(name_),
-            Entry::Folder {ref mut name, ..} => *name = Some(name_),
+            Entry::File { ref mut name, .. } => *name = Some(name_),
+            Entry::Folder { ref mut name, .. } => *name = Some(name_),
         }
 
         Ok(())
@@ -277,8 +309,8 @@ impl Entry {
     /// Returns this entry's filename. Returns `None` if the filename hasn't been read from the string table.
     pub fn name(&self) -> Option<&str> {
         let name = match *self {
-            Entry::File {ref name, ..} => name,
-            Entry::Folder {ref name, ..} => name,
+            Entry::File { ref name, .. } => name,
+            Entry::Folder { ref name, .. } => name,
         };
 
         name.as_ref().map(String::as_str)
@@ -287,8 +319,8 @@ impl Entry {
     /// Returns the offset into the string table of this entry's filename.
     pub fn filename_offset(&self) -> u16 {
         match *self {
-            Entry::File {name_offset, ..} => name_offset,
-            Entry::Folder {name_offset, ..} => name_offset,
+            Entry::File { name_offset, .. } => name_offset,
+            Entry::Folder { name_offset, .. } => name_offset,
         }
     }
 }
@@ -313,7 +345,7 @@ mod test {
     fn dump_bianco_vfs() {
         use std::fs::File;
         use std::path::Path;
-        use std::io::{BufReader};
+        use std::io::BufReader;
 
         let file = File::open(Path::new("data/bianco0.rarc")).expect("file not found");
         let mut reader = BufReader::new(file);
@@ -335,6 +367,20 @@ mod test {
         let header = Header::read(&mut reader).expect("could not parse header");
 
         assert_eq!(reader.seek(SeekFrom::Current(0)).unwrap(), 0x40);
-        assert_eq!(header, Header { file_size: 5600608, data_offset: 27200, data_length: 5573408, n_nodes: 48, nodes_offset: 64, n_entries: 766, entries_offset: 832, strings_size: 11040, strings_offset: 16160, n_files: 766 });
+        assert_eq!(
+            header,
+            Header {
+                file_size: 5600608,
+                data_offset: 27200,
+                data_length: 5573408,
+                n_nodes: 48,
+                nodes_offset: 64,
+                n_entries: 766,
+                entries_offset: 832,
+                strings_size: 11040,
+                strings_offset: 16160,
+                n_files: 766,
+            }
+        );
     }
 }
