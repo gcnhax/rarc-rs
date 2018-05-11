@@ -4,13 +4,13 @@ extern crate byteorder;
 extern crate encoding;
 #[macro_use]
 extern crate nom;
+extern crate nom_reader;
 
 #[cfg(test)]
 #[macro_use]
 extern crate pretty_assertions;
 
 mod error;
-mod parse_read;
 mod parser;
 pub mod vfs;
 
@@ -151,7 +151,7 @@ impl Header {
     where
         R: Read + Seek,
     {
-        parse_read::read(parser::parse_header, rdr)
+        nom_reader::read(parser::parse_header, rdr)
     }
 
     /// Writes this header to a writer.
@@ -205,7 +205,7 @@ impl Node {
     where
         R: Read + Seek,
     {
-        parse_read::read(parser::parse_node, rdr)
+        nom_reader::read(parser::parse_node, rdr)
     }
 
     /// Reads the name of this node from the string table.
@@ -282,7 +282,7 @@ impl Entry {
     where
         R: Read + Seek,
     {
-        parse_read::read(parser::parse_entry, rdr)
+        nom_reader::read(parser::parse_entry, rdr)
     }
 
     /// Reads the name of this entry from the string table.

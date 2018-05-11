@@ -5,6 +5,7 @@ authors = ["Erin Moon <erin@hashbang.sh>"]
 
 [dependencies]
 nom = "3.2"
+nom-reader = "0.1"
 pretty_assertions = "0.3.0"
 byteorder = "1.1.0"
 encoding = "0.2"
