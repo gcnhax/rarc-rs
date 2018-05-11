@@ -310,10 +310,24 @@ mod test {
     use super::*;
 
     #[test]
+    fn dump_bianco_vfs() {
+        use std::fs::File;
+        use std::path::Path;
+        use std::io::{BufReader};
+
+        let file = File::open(Path::new("data/bianco0.rarc")).expect("file not found");
+        let mut reader = BufReader::new(file);
+
+        let rarc = Rarc::new(&mut reader).expect("couldn't open rarc file");
+
+        vfs::dump_tree(&rarc.fs.root);
+    }
+
+    #[test]
     fn read_header_from_file() {
         use std::fs::File;
         use std::path::Path;
-        use std::io::{Read, BufReader, Seek, SeekFrom, Cursor};
+        use std::io::{BufReader, Seek, SeekFrom};
 
         let mut file = File::open(Path::new("data/bianco0.rarc")).expect("file not found");
         let mut reader = BufReader::new(file);
