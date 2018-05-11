@@ -167,7 +167,7 @@ mod test {
         let header = parse_result.unwrap().1;
 
         let mut new_header_data: Vec<u8> = vec![];
-        header.write(&mut new_header_data);
+        header.write(&mut new_header_data).expect("failed to write header to Vec<u8>");
 
         assert_eq!(&new_header_data[..], &HANDCRAFTED_RARC_HEADER[..]);
     }

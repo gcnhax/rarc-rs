@@ -361,7 +361,7 @@ mod test {
         use std::path::Path;
         use std::io::{BufReader, Seek, SeekFrom};
 
-        let mut file = File::open(Path::new("data/bianco0.rarc")).expect("file not found");
+        let file = File::open(Path::new("data/bianco0.rarc")).expect("file not found");
         let mut reader = BufReader::new(file);
 
         let header = Header::read(&mut reader).expect("could not parse header");
