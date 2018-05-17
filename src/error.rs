@@ -51,4 +51,12 @@ impl StdError for Error {
             Error::NoRootNode => "First node found in node table is not ROOT",
         }
     }
+
+    fn cause(&self) -> Option<&StdError> {
+        match self {
+            Error::Io(io_err) => Some(io_err),
+            Error::Parse(parse_err) => Some(parse_err),
+            _ => None,
+        }
+    }
 }
