@@ -123,9 +123,9 @@ mod test {
 
         let parse_result = parse_header(data);
 
-        assert!(parse_result.is_done());
+        assert!(parse_result.is_ok());
 
-        if let IResult::Done(_, ref header) = parse_result {
+        if let Ok((_, header)) = parse_result {
             println!("{:?}", header);
         }
     }
@@ -135,7 +135,7 @@ mod test {
     fn test_parse_header() {
         let parse_result = parse_header(HANDCRAFTED_RARC_HEADER);
 
-        assert!(parse_result.is_done());
+        assert!(parse_result.is_ok());
         assert_eq!(
             parse_result.unwrap().1,
             Header {
@@ -162,7 +162,7 @@ mod test {
     fn test_header_invertibility() {
         let parse_result = parse_header(HANDCRAFTED_RARC_HEADER);
 
-        assert!(parse_result.is_done());
+        assert!(parse_result.is_ok());
 
         let header = parse_result.unwrap().1;
 

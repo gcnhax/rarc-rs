@@ -8,7 +8,7 @@ pub enum Error {
     /// An I/O error encountered when reading or writing a file or cursor during RARC manipulation.
     Io(io::Error),
     /// A parse error encountered when attempting to parse RARC metadata.
-    Parse(nom::Err),
+    Parse(nom::ErrorKind),
 
     /// Encountered if no nodes are present in the RARC node table.
     NoNodes,
@@ -34,7 +34,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self {
             Error::Io(io_err) => write!(f, "IO error: {}", io_err),
-            Error::Parse(parse_err) => write!(f, "Parse error: {}", parse_err),
+            Error::Parse(parse_err) => write!(f, "Parse error: {}", parse_err.description()),
             Error::NameEncodingError(err) => write!(f, "Error encoding filename: {}", err),
             _ => f.write_str(self.description()),
         }
@@ -55,7 +55,6 @@ impl StdError for Error {
     fn cause(&self) -> Option<&StdError> {
         match self {
             Error::Io(io_err) => Some(io_err),
-            Error::Parse(parse_err) => Some(parse_err),
             _ => None,
         }
     }
